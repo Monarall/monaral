@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plane Dodger Game</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Monoton&display=swap">
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #87CEEB;
+        font-family: Arial, sans-serif;
+    }
+    #container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+    }
+    #game-header {
+        font-family: 'Monoton', cursive;
+        font-size: 36px;
+        color: #fff;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+        margin-bottom: 20px;
+    }
+    #game-container {
+        position: relative;
+        width: 400px;
+        height: 600px;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+    }
+    #plane {
+        width: 40px; /* Adjusted plane width */
+        height: 30px; /* Adjusted plane height */
+        position: absolute;
+        bottom: 50px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1;
+    }
+    .rock {
+        width: 40px;
+        height: 40px;
+        background-image: url('https://i.redd.it/w1ctilzr8df71.png');
+        background-size: cover;
+        position: absolute;
+        z-index: 1;
+        border-radius: 50%;
+        visibility: visible;
+    }
+    .moving-rock {
+        background-color: #333; /* Example color for moving rocks */
+    }
+    .rotating-rock {
+        background-color: #666; /* Example color for rotating rocks */
+    }
+    .large-rock {
+        width: 60px; /* Adjusted width for large rocks */
+        height: 60px; /* Adjusted height for large rocks */
+        background-color: #999; /* Example color for large rocks */
+    }
+    #score {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        color: #000;
+        font-size: 16px;
+        z-index: 1;
+    }
+    #game-over {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        color: red;
+        display: none;
+        z-index: 2;
+    }
+    #retry-button {
+        position: absolute;
+        top: 60%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        display: none;
+        z-index: 2;
+    }
+    #career-stats {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: #000;
+        font-size: 14px;
+        z-index: 1;
+    }
+</style>
+</head>
+<body>
+
+<div id="container">
+    <h1 id="game-header">Monaral Plane Game</h1>
+    <div id="game-container">
+        <img id="plane" src="https://cdn-icons-png.flaticon.com/512/4851/4851332.png" alt="Plane">
+        <div id="score">Score: 0 | High Score: 0</div>
+        <div id="game-over">Game Over!</div>
+        <div id="game-over-score" style="display: none;"></div>
+        <button id="retry-button">Retry</button>
+    </div>
+    <div id="career-stats"></div>
+</div>
+
+<audio id="planeSound" src="plane_sound.mp3"></audio>
+<audio id="collisionSound" src="collision_sound.mp3"></audio>
+
+<script>
+    let plane = document.getElementById('plane');
+    let scoreDisplay = document.getElementById('score');
+    let gameOverText = document.getElementById('game-over');
+    let gameOverScore = document.getElementById('game-over-score');
+    let retryButton = document.getElementById('retry-button');
+    let careerStats = document.getElementById('career-stats');
+    let score = 0;
+    let highScore = localStorage.getItem('highScore') || 0;
+    let totalScore = parseFloat(localStorage.getItem('totalScore')) || 0;
+    let totalDeaths = parseFloat(localStorage.getItem('totalDeaths')) || 0;
+    let totalPlaytime = parseFloat(localStorage.getItem('totalPlaytime')) || 0;
+    let rocks = [];
+    let planeX = 180; // Set initial plane position
+    let planeY = 0;
+    let planeSpeed = 5; // Adjusted plane speed
+    let rockSpeed = 5;
+    let gameRunning = false;
+    let startTime;
+
+    function updateScore() {
+        scoreDisplay.textContent = `Score: ${score} | High Score: ${highScore}`;
+    }
+
+    function createRock() {
+        let rock = document.createElement('div');
+        rock.className = 'rock';
+        
+        // Randomly select rock type
+        let randomType = Math.random();
+        if (randomType < 0.33) {
+            rock.classList.add('moving-rock');
+            rock.speed = 2 + Math.random() * 3; // Random speed between 2 and 5
+        } else if (randomType < 0.66) {
+            rock.classList.add('rotating-rock');
+            rock.rotationSpeed = 1 + Math.random() * 3; // Random rotation speed between 1 and 4
+        } else {
+            rock.classList.add('large-rock');
+        }
+
+        rock.style.left = `${Math.random() * 340}px`; // Adjusted block position
+        rock.style.top = `-40px`; // Adjusted block starting position
+        document.getElementById('game-container').appendChild(rock);
+        rocks.push(rock);
+    }
+
+    function moveRocks() {
+        rocks.forEach((rock, index) => {
+            let rockRect = rock.getBoundingClientRect();
+            let planeRect = plane.getBoundingClientRect();
+
+            if (
+                rockRect.left < planeRect.right &&
+                rockRect.right > planeRect.left &&
+                rockRect.top < planeRect.bottom &&
+                rockRect.bottom > planeRect.top
+            ) {
+                endGame();
+            }
+
+            rock.style.top = `${parseFloat(rock.style.top) + rockSpeed}px`;
+
+            if (parseFloat(rock.style.top) > 600) {
+                rock.remove();
+                rocks.splice(index, 1);
+                score++;
+                totalScore++;
+                updateScore();
+            }
+
+            // Move or rotate the rock based on its type
+            if (rock.classList.contains('moving-rock')) {
+                rock.style.top = `${parseFloat(rock.style.top) + rock.speed}px`;
+            } else if (rock.classList.contains('rotating-rock')) {
+                rock.style.transform = `rotate(${parseFloat(rock.style.transform || 0) + rock.rotationSpeed}deg)`;
+            }
+        });
+    }
+
+    function endGame() {
+        gameRunning = false;
+        gameOverText.style.display = 'block';
+        gameOverScore.style.display = 'block';
+        gameOverScore.textContent = `You hit ${score}!`;
+        retryButton.style.display = 'block';
+        totalDeaths++;
+        localStorage.setItem('totalDeaths', totalDeaths);
+        let endTime = Date.now();
+        let playtime = (endTime - startTime) / 1000; // in seconds
+        totalPlaytime += playtime;
+        localStorage.setItem('totalPlaytime', totalPlaytime);
+        localStorage.setItem('totalScore', totalScore);
+        careerStats.innerHTML = `Total Playtime: ${totalPlaytime.toFixed(2)}s<br>Total Score: ${totalScore}<br>Total Deaths: ${totalDeaths}`;
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('highScore', highScore);
+        }
+        score = 0;
+        updateScore();
+        rockSpeed = 5; // Reset rock speed
+    }
+
+    function increaseDifficulty() {
+        // Increase rock speed at specific score intervals
+        if (score >= 100 && score < 350) {
+            rockSpeed = 7;
+        } else if (score >= 350 && score < 680) {
+            rockSpeed = 9;
+        } else if (score >= 680 && score < 1000) {
+            rockSpeed = 15;
+        } else if (score >= 1000) {
+            rockSpeed = 18.5;
+        }
+    }
+
+    function gameLoop() {
+        if (gameRunning) {
+            moveRocks();
+            increaseDifficulty(); // Increase difficulty at specific score intervals
+            requestAnimationFrame(gameLoop);
+        }
+    }
+
+    function playGame() {
+        gameRunning = true;
+        startTime = Date.now();
+        score = 0;
+        updateScore();
+        gameLoop();
+    }
+
+    function retryGame() {
+        gameOverText.style.display = 'none';
+        gameOverScore.style.display = 'none';
+        retryButton.style.display = 'none';
+        while (rocks.length > 0) {
+            rocks.pop().remove();
+        }
+        playGame();
+    }
+
+    retryButton.addEventListener('click', retryGame);
+
+    playGame(); // Start the game immediately
+
+    document.getElementById('game-container').addEventListener('mousemove', function(e) {
+        if (gameRunning) {
+            planeX = e.clientX - this.offsetLeft - plane.offsetWidth / 2;
+            if (planeX < 0) planeX = 0;
+            if (planeX > 320) planeX = 320;
+            plane.style.left = `${planeX}px`;
+        }
+    });
+
+    setInterval(() => {
+        if (gameRunning) {
+            createRock();
+        }
+    }, 500); // Adjusted interval for block creation
+
+    // Sound effects
+    let planeSound = document.getElementById('planeSound');
+    let collisionSound = document.getElementById('collisionSound');
+
+    planeSound.volume = 0.2;
+    collisionSound.volume = 0.5;
+</script>
+
+</body>
+</html>
