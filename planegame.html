@@ -28,8 +28,10 @@
     }
     #game-container {
         position: relative;
-        width: 400px;
-        height: 600px;
+        width: 100vw; /* Adjusted for mobile screens */
+        height: 80vh; /* Adjusted for mobile screens */
+        max-width: 400px; /* Limiting maximum width for larger screens */
+        max-height: 600px; /* Limiting maximum height for larger screens */
         background-color: #fff;
         border-radius: 10px;
         box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);
@@ -269,8 +271,20 @@
 
     playGame(); // Start the game immediately
 
-    document.getElementById('game-container').addEventListener('mousemove', function(e) {
+    // Touch controls for mobile devices
+    document.getElementById('game-container').addEventListener('touchmove', function(e) {
+        e.preventDefault(); // Prevent scrolling while touching the game area
         if (gameRunning) {
+            planeX = e.touches[0].clientX - this.offsetLeft - plane.offsetWidth / 2;
+            if (planeX < 0) planeX = 0;
+            if (planeX > 320) planeX = 320;
+            plane.style.left = `${planeX}px`;
+        }
+    });
+
+    // Mouse controls for desktop
+    document.getElementById('game-container').addEventListener('mousemove', function(e) {
+        if (gameRunning && !('ontouchstart' in window)) { // Check if not a touch device
             planeX = e.clientX - this.offsetLeft - plane.offsetWidth / 2;
             if (planeX < 0) planeX = 0;
             if (planeX > 320) planeX = 320;
