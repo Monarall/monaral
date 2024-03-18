@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Plane Dodger Game</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Monoton&display=swap">
+<meta property="og:image" content="https://motionarray.imgix.net/1784335-xAZhywVKbr-high_0004.jpg?w=660&q=60&fit=max&auto=format">
 <style>
     body {
         margin: 0;
@@ -123,22 +124,11 @@
         left: 50%; /* Positioning added */
         transform: translate(-50%, -50%); /* Positioning added */
     }
-    #leaderboard-button,
-    #create-account-button,
-    #log-in-button {
-        padding: 20px 40px;
-        background-color: #007bff;
-        color: #fff;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        font-size: 20px;
-        font-weight: bold;
-        text-transform: uppercase;
-        z-index: 2;
-        position: absolute;
-        top: 10px; /* Adjusted position */
-        right: 10px; /* Adjusted position */
+    .website-image {
+        width: 100%; /* Adjusted width for better responsiveness */
+        max-width: 400px; /* Limiting maximum width for larger screens */
+        border-radius: 10px; /* Added border-radius for a rounded image */
+        margin-top: 20px; /* Added margin-top for spacing */
     }
 </style>
 </head>
@@ -155,9 +145,6 @@
     </div>
     <div id="career-stats"></div>
     <button id="start-button">Start</button>
-    <button id="leaderboard-button">Leaderboard</button> <!-- Added leaderboard button -->
-    <button id="create-account-button">Create Account</button> <!-- Added create account button -->
-    <button id="log-in-button">Log In</button> <!-- Added log in button -->
 </div>
 
 <audio id="planeSound" src="plane_sound.mp3"></audio>
@@ -307,23 +294,6 @@
     startButton.addEventListener('click', function() {
         startButton.style.display = 'none';
         playGame(); // Start the game immediately
-    });
-
-    // Leaderboard button functionality
-    document.getElementById('leaderboard-button').addEventListener('click', function() {
-        window.location.href = 'leaderboard.html'; // Redirect to leaderboard page
-    });
-
-    // Create account button functionality
-    document.getElementById('create-account-button').addEventListener('click', function() {
-        // Add your create account functionality here
-        alert('Create Account button clicked!');
-    });
-
-    // Log in button functionality
-    document.getElementById('log-in-button').addEventListener('click', function() {
-        // Add your log in functionality here
-        alert('Log In button clicked!');
     });
 
     // Touch controls for mobile devices
